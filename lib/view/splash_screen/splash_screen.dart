@@ -11,25 +11,25 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-        Future.delayed(
+    Future.delayed(
       const Duration(seconds: 1),
       () {
         if (LocalServices.isUserLoggedIn()) {
           Get.offNamed(Routes.homePage);
         } else {
-           Get.offNamed(Routes.mainAuth);
+          Get.offNamed(Routes.mainAuth);
         }
       },
     );
   }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       body: Center(
         child: CircularProgressIndicator(),
       ),

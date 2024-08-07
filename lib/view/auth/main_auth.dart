@@ -27,6 +27,7 @@ class _MainAuthState extends State<MainAuth> with SingleTickerProviderStateMixin
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+             resizeToAvoidBottomInset: false,
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
         child: Center(
@@ -36,6 +37,9 @@ class _MainAuthState extends State<MainAuth> with SingleTickerProviderStateMixin
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                const SizedBox(
+                  height: 100
+                ),
                 TabBar(
                    indicatorColor: Colors.blue,
                   dividerColor: Colors.grey,
@@ -52,19 +56,19 @@ class _MainAuthState extends State<MainAuth> with SingleTickerProviderStateMixin
                   controller: tabController,
                   unselectedLabelColor: Colors.black,
                   tabAlignment: TabAlignment.start,
-                  tabs: [
-                    Container(child: Text("Sign In"),),
-                    Container(child: Text("Sign Up"),)
+                  tabs: const [
+                    Text("Sign In"),
+                    Text("Sign Up")
                   ],
                 ),
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.50,
+                Expanded(
+                flex: 5,
                   child: TabBarView(
                     physics: const NeverScrollableScrollPhysics(),
                     controller: tabController,
                     children:  [
                       Signin(),
-                      SignUp()
+                      const SignUp()
                     ],
                   ),
                 ),

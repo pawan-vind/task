@@ -1,10 +1,9 @@
-// ignore_for_file: deprecated_member_use
+
 
 import 'package:flutter/material.dart';
 import 'package:task/constants/colors.dart';
 import 'package:task/constants/testStyling.dart';
 
-// ignore: must_be_immutable
 class CustomLongButton extends StatelessWidget {
   final void Function()? ontap;
   final String name;

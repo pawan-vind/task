@@ -21,7 +21,6 @@ class _PasswordTextFieldState extends State<PasswordTextField> {
   @override
   Widget build(BuildContext context) {
     return TextFormField(
-      // enableInteractiveSelection: true,
       validator: (value) {
         if (value!.isEmpty) {
           return "Password is Empty";

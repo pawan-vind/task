@@ -19,20 +19,23 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   HomePageControler homePageControler = Get.put(HomePageControler());
   AuthController authController = Get.put(AuthController());
-
-
-
-
+  final scrollController = ScrollController();
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    homePageControler.getUserList();
+
+    homePageControler.getUserList(homePageControler.currentPage.value);
   }
 
   @override
   Widget build(BuildContext context) {
+    scrollController.addListener(() {
+      if (scrollController.position.pixels ==
+          scrollController.position.maxScrollExtent) {
+        homePageControler.fetchMoreItems(homePageControler.currentPage.value);
+      }
+    });
     return Scaffold(
       appBar: AppBar(
         leading: Padding(
@@ -74,44 +77,45 @@ class _HomePageState extends State<HomePage> {
       ),
       body: Obx(() {
         return homePageControler.isLoading.value
-            ?const Center(
+            ? const Center(
                 child: CircularProgressIndicator(),
               )
             : CustomRefreshIndicator(
-              builder: (
-                      BuildContext context,
-                      Widget child,
-                      IndicatorController controller,
-                    ) {
-                      return Stack(
-                        alignment: Alignment.topCenter,
-                        children: <Widget>[
-                          if (!controller.isIdle)
-                            Positioned(
-                              top: 35.0 * controller.value,
-                              child: SizedBox(
-                                height: 30,
-                                width: 30,
-                                child: CircularProgressIndicator(
-                                  color: AppColors.black,
-                                  value: !controller.isLoading
-                                      ? controller.value.clamp(0.0, 1.0)
-                                      : null,
-                                ),
-                              ),
+                builder: (
+                  BuildContext context,
+                  Widget child,
+                  IndicatorController controller,
+                ) {
+                  return Stack(
+                    alignment: Alignment.topCenter,
+                    children: <Widget>[
+                      if (!controller.isIdle)
+                        Positioned(
+                          top: 35.0 * controller.value,
+                          child: SizedBox(
+                            height: 30,
+                            width: 30,
+                            child: CircularProgressIndicator(
+                              color: AppColors.black,
+                              value: !controller.isLoading
+                                  ? controller.value.clamp(0.0, 1.0)
+                                  : null,
                             ),
-                          Transform.translate(
-                            offset: Offset(0, 100.0 * controller.value),
-                            child: child,
                           ),
-                        ],
-                      );
-                    },
-                     // backgroundColor: AppColors.customBlack,
-                    onRefresh: () async {
-                      homePageControler.getUserList();
-                    },
-              child: Padding(
+                        ),
+                      Transform.translate(
+                        offset: Offset(0, 100.0 * controller.value),
+                        child: child,
+                      ),
+                    ],
+                  );
+                },
+                // backgroundColor: AppColors.customBlack,
+                onRefresh: () async {
+                  homePageControler
+                      .getUserList(homePageControler.currentPage.value);
+                },
+                child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Obx(() {
                     return authController.isLoading.value
@@ -144,8 +148,8 @@ class _HomePageState extends State<HomePage> {
                                             children: [
                                               InkWell(
                                                 onTap: () {
-                                                  homePageControler.isGrid.value =
-                                                      false;
+                                                  homePageControler
+                                                      .isGrid.value = false;
                                                 },
                                                 child: Icon(
                                                   Icons.list,
@@ -179,6 +183,7 @@ class _HomePageState extends State<HomePage> {
                               Obx(() => homePageControler.isGrid.value
                                   ? Expanded(
                                       child: GridView.builder(
+                                        controller: scrollController,
                                         physics:
                                             const AlwaysScrollableScrollPhysics(),
                                         // shrinkWrap: true,
@@ -189,22 +194,77 @@ class _HomePageState extends State<HomePage> {
                                           crossAxisSpacing: 5,
                                           mainAxisSpacing: 5,
                                         ),
-                                        itemCount: homePageControler.userListModel!.userList!.length,
+                                        itemCount: homePageControler
+                                                .isScrollLoading.value
+                                            ? homePageControler.userListModel!
+                                                    .userList!.length +
+                                                1
+                                            : homePageControler.userListModel!
+                                                .userList!.length,
                                         itemBuilder: (context, index) {
-                                          UserList data = homePageControler.userListModel!.userList![index];
-                                          return gridContainer(data);
+                                          if (index <
+                                              homePageControler.userListModel!
+                                                  .userList!.length) {
+                                            UserList data = homePageControler
+                                                .userListModel!
+                                                .userList![index];
+                                            return gridContainer(data);
+                                          } else {
+                                            return homePageControler
+                                                    .isScrollLoading.value
+                                                ? const Padding(
+                                                    padding: EdgeInsets.only(
+                                                        bottom: 20),
+                                                    child: Center(
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                        color: Colors.black,
+                                                      ),
+                                                    ),
+                                                  )
+                                                : Container();
+                                            // : Container();
+                                          }
                                         },
                                       ),
                                     )
                                   : Expanded(
                                       child: ListView.builder(
-                                        itemCount: homePageControler.userListModel!.userList!.length,
+                                        controller: scrollController,
+                                        itemCount: homePageControler
+                                                .isScrollLoading.value
+                                            ? homePageControler.userListModel!
+                                                    .userList!.length +
+                                                1
+                                            : homePageControler.userListModel!
+                                                .userList!.length,
                                         physics:
                                             const AlwaysScrollableScrollPhysics(),
                                         shrinkWrap: true,
                                         itemBuilder: (context, index) {
-                                          UserList data = homePageControler.userListModel!.userList![index];
-                                          return listContainer(data);
+                                          if (index <
+                                              homePageControler.userListModel!
+                                                  .userList!.length) {
+                                            UserList data = homePageControler
+                                                .userListModel!
+                                                .userList![index];
+                                            return listContainer(data);
+                                          } else {
+                                            return homePageControler
+                                                    .isScrollLoading.value
+                                                ? const Padding(
+                                                    padding: EdgeInsets.only(
+                                                        bottom: 20),
+                                                    child: Center(
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                        color: Colors.black,
+                                                      ),
+                                                    ),
+                                                  )
+                                                : Container();
+                                            // : Container();
+                                          }
                                         },
                                       ),
                                     ))
@@ -212,7 +272,7 @@ class _HomePageState extends State<HomePage> {
                           );
                   }),
                 ),
-            );
+              );
       }),
     );
   }
@@ -232,9 +292,7 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 5),
             Text(data.lastName.toString()),
             const SizedBox(height: 5),
-            Text(
-              overflow: TextOverflow.ellipsis,
-              data.email.toString()),
+            Text(overflow: TextOverflow.ellipsis, data.email.toString()),
             const SizedBox(height: 5),
             Text(data.phoneNo.toString()),
             const SizedBox(height: 5),
@@ -244,10 +302,6 @@ class _HomePageState extends State<HomePage> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {},
-                    child: Text(
-                      'View Profile',
-                      style: AppStyling.darkblueF12W400,
-                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
                       elevation: 0,
@@ -260,6 +314,10 @@ class _HomePageState extends State<HomePage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
+                    ),
+                    child: Text(
+                      'View Profile',
+                      style: AppStyling.darkblueF12W400,
                     ),
                   ),
                 ),
@@ -292,18 +350,13 @@ class _HomePageState extends State<HomePage> {
                     "${data.firstName} ${data.lastName}",
                     style: AppStyling.blackF12W400,
                   ),
-                  Text(
-                    "${data.email}   ${data.phoneNo}",
+                  Text("${data.email}   ${data.phoneNo}",
                       style: AppStyling.blackF12W400)
                 ],
               ),
             ),
             ElevatedButton(
               onPressed: () {},
-              child: Text(
-                'View Profile',
-                style: AppStyling.darkblueF12W400,
-              ),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.all(8),
                 backgroundColor: Colors.transparent,
@@ -317,6 +370,10 @@ class _HomePageState extends State<HomePage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
+              ),
+              child: Text(
+                'View Profile',
+                style: AppStyling.darkblueF12W400,
               ),
             ),
           ],

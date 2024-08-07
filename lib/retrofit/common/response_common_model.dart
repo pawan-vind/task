@@ -13,14 +13,12 @@ class ResponseCommonModel {
     this.exceptionMessage,
   });
 
-  /// pass parent json directly here, instead of passing from data
   ResponseCommonModel.fromJson(Map<String, dynamic> json) {
     status = json['status'] ?? false;
     message = json['message'] ?? "";
 
     try {
       if (json['errors'] != null) {
-        // log("Data runtime type ::: " + (jsonDecode(json['data']).runtimeType is Map).toString());
         if (json['errors'].runtimeType == List &&
             (json['errors'] as List).isNotEmpty) {
           if (json['errors'][0]['message'] != null) {

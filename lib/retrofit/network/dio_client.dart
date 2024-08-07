@@ -34,12 +34,6 @@ class DioClient {
         };
     }
 
-    // (_dio.httpClientAdapter as DefaultHttpClientAdapter).onHttpClientCreate =
-    //     (HttpClient dioClient) {
-    //   dioClient.badCertificateCallback =
-    //       ((X509Certificate cert, String host, int port) => true);
-    //   return dioClient;
-    // };
     if (kDebugMode) {
       _dio.interceptors.add(LogInterceptor(
           responseBody: true,
@@ -162,7 +156,6 @@ class DioClient {
       } else {
         rethrow;
       }
-      // throw error;
     }
   }
 }

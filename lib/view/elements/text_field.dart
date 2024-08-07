@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
 
-// ignore: must_be_immutable
 class CustomTextField extends StatelessWidget {
-  final String? labelText;
+  String? labelText;
   final Widget? prefixIcon;
   final Color? color;
   final bool? isEmailfield;
@@ -34,15 +32,18 @@ class CustomTextField extends StatelessWidget {
       this.isContact = false,
       this.isEnable = true});
 
-
-
-
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       enabled: isEnable,
-      // cursorColor: AppColors.customBlack,
       controller: controller,
+      validator: (input) {
+        if (labelText == "Email" || labelText == "Enter your email") {
+          return input!.isValidEmail() ? null : "Check your email";
+        } else  {
+          return input!.isNotEmpty ? null : "Required";
+        }
+      },
       decoration: InputDecoration(
         fillColor: color,
         filled: true,
@@ -79,5 +80,13 @@ class CustomTextField extends StatelessWidget {
       ),
       keyboardType: keyboardType,
     );
+  }
+}
+
+extension EmailValidator on String {
+  bool isValidEmail() {
+    return RegExp(
+            r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$')
+        .hasMatch(this);
   }
 }
