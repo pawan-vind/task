@@ -1,9 +1,11 @@
+import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:task/constants/colors.dart';
 import 'package:task/constants/testStyling.dart';
 import 'package:task/controller/auth/auth_controller.dart';
 import 'package:task/controller/homePage/home_page_controler.dart';
+import 'package:task/retrofit/local/local_db.dart';
 
 import '../../model/user_list_model.dart';
 
@@ -17,58 +19,15 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   HomePageControler homePageControler = Get.put(HomePageControler());
   AuthController authController = Get.put(AuthController());
-    final scrollController = ScrollController();
-      int perPage = 10;
 
-  bool isLoadingMore = false;
 
-    fetchPendingReviewData() async {
-    if (homePageControler.userListModel != null || isLoadingMore) {
-      setState(() {
-        isLoadingMore = true;
-      });
-      bool hasNewData = (await homePageControler.getUserList(page: homePageControler.currentPage.value)) as bool;
-      if (hasNewData) {
-        setState(() {
-          isLoadingMore = false;
-        });
-      } else {
-        homePageControler.currentPage.value -= 1;
-        setState(() {
-          isLoadingMore = false;
-        });
-      }
-    }
-  }
 
-    Future<void> _scrollListener() async {
-    if (isLoadingMore) return;
 
-    if (scrollController.position.pixels ==
-        scrollController.position.maxScrollExtent) {
-      setState(() {
-        isLoadingMore = true;
-      });
-
-      homePageControler.currentPage.value += 1;
-      await fetchPendingReviewData();
-      setState(() {
-        isLoadingMore = false;
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    scrollController.dispose();
-    super.dispose();
-  }
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    scrollController.addListener(_scrollListener);
     homePageControler.getUserList();
   }
 
@@ -89,13 +48,15 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         title: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Name',
-              style: AppStyling.blackF12W400,
+              "${LocalDB.getString("fname")} ${LocalDB.getString("lname")}",
+              style: AppStyling.blackF16W500,
             ),
             Text(
-              "email.ic",
+              LocalDB.getString('email'),
               style: AppStyling.blackF12W400,
             )
           ],
@@ -107,7 +68,7 @@ class _HomePageState extends State<HomePage> {
                 onTap: () {
                   authController.logout(context);
                 },
-                child: Icon(Icons.logout)),
+                child: const Icon(Icons.logout)),
           )
         ],
       ),
@@ -116,109 +77,142 @@ class _HomePageState extends State<HomePage> {
             ?const Center(
                 child: CircularProgressIndicator(),
               )
-            : Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Obx(() {
-                  return authController.isLoading.value
-                      ? Center(
-                          child: CircularProgressIndicator(),
-                        )
-                      : Column(
-                          children: [
-                            const SizedBox(height: 20),
-                            Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text("User List"),
-                                  Container(
-                                    width: 100,
-                                    decoration: BoxDecoration(
-                                        borderRadius: const BorderRadius.all(
-                                            Radius.circular(8)),
-                                        border: Border.all(
-                                            color: AppColors.greyColor)),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Obx(() {
-                                        return Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            InkWell(
-                                              onTap: () {
-                                                homePageControler.isGrid.value =
-                                                    false;
-                                              },
-                                              child: Icon(
-                                                Icons.list,
-                                                color: homePageControler
-                                                            .isGrid.value ==
-                                                        false
-                                                    ? AppColors.darkblue
-                                                    : AppColors.black,
-                                              ),
-                                            ),
-                                            InkWell(
-                                                onTap: () {
-                                                  homePageControler
-                                                      .isGrid.value = true;
-                                                },
-                                                child: Icon(
-                                                  Icons.grid_4x4,
-                                                  color: homePageControler
-                                                          .isGrid.value
-                                                      ? AppColors.darkblue
-                                                      : AppColors.black,
-                                                ))
-                                          ],
-                                        );
-                                      }),
-                                    ),
-                                  )
-                                ],
+            : CustomRefreshIndicator(
+              builder: (
+                      BuildContext context,
+                      Widget child,
+                      IndicatorController controller,
+                    ) {
+                      return Stack(
+                        alignment: Alignment.topCenter,
+                        children: <Widget>[
+                          if (!controller.isIdle)
+                            Positioned(
+                              top: 35.0 * controller.value,
+                              child: SizedBox(
+                                height: 30,
+                                width: 30,
+                                child: CircularProgressIndicator(
+                                  color: AppColors.black,
+                                  value: !controller.isLoading
+                                      ? controller.value.clamp(0.0, 1.0)
+                                      : null,
+                                ),
                               ),
                             ),
-                            Obx(() => homePageControler.isGrid.value
-                                ? Expanded(
-                                    child: GridView.builder(
-                                      controller: scrollController ,
-                                      physics:
-                                          const AlwaysScrollableScrollPhysics(),
-                                      // shrinkWrap: true,
-                                      gridDelegate:
-                                          const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 2,
-                                        childAspectRatio: 3 / 3,
-                                        crossAxisSpacing: 5,
-                                        mainAxisSpacing: 5,
+                          Transform.translate(
+                            offset: Offset(0, 100.0 * controller.value),
+                            child: child,
+                          ),
+                        ],
+                      );
+                    },
+                     // backgroundColor: AppColors.customBlack,
+                    onRefresh: () async {
+                      homePageControler.getUserList();
+                    },
+              child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Obx(() {
+                    return authController.isLoading.value
+                        ? const Center(
+                            child: CircularProgressIndicator(),
+                          )
+                        : Column(
+                            children: [
+                              const SizedBox(height: 20),
+                              Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text("User List"),
+                                    Container(
+                                      width: 100,
+                                      decoration: BoxDecoration(
+                                          borderRadius: const BorderRadius.all(
+                                              Radius.circular(8)),
+                                          border: Border.all(
+                                              color: AppColors.greyColor)),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Obx(() {
+                                          return Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              InkWell(
+                                                onTap: () {
+                                                  homePageControler.isGrid.value =
+                                                      false;
+                                                },
+                                                child: Icon(
+                                                  Icons.list,
+                                                  color: homePageControler
+                                                              .isGrid.value ==
+                                                          false
+                                                      ? AppColors.darkblue
+                                                      : AppColors.black,
+                                                ),
+                                              ),
+                                              InkWell(
+                                                  onTap: () {
+                                                    homePageControler
+                                                        .isGrid.value = true;
+                                                  },
+                                                  child: Icon(
+                                                    Icons.grid_4x4,
+                                                    color: homePageControler
+                                                            .isGrid.value
+                                                        ? AppColors.darkblue
+                                                        : AppColors.black,
+                                                  ))
+                                            ],
+                                          );
+                                        }),
                                       ),
-                                      itemCount: homePageControler.userListModel!.userList!.length,
-                                      itemBuilder: (context, index) {
-                                        UserList data = homePageControler.userListModel!.userList![index];
-                                        return gridContainer(data);
-                                      },
-                                    ),
-                                  )
-                                : Expanded(
-                                    child: ListView.builder(
-                                      controller: scrollController ,
-                                      itemCount: homePageControler.userListModel!.userList!.length,
-                                      physics:
-                                          const AlwaysScrollableScrollPhysics(),
-                                      shrinkWrap: true,
-                                      itemBuilder: (context, index) {
-                                        UserList data = homePageControler.userListModel!.userList![index];
-                                        return listContainer(data);
-                                      },
-                                    ),
-                                  ))
-                          ],
-                        );
-                }),
-              );
+                                    )
+                                  ],
+                                ),
+                              ),
+                              Obx(() => homePageControler.isGrid.value
+                                  ? Expanded(
+                                      child: GridView.builder(
+                                        physics:
+                                            const AlwaysScrollableScrollPhysics(),
+                                        // shrinkWrap: true,
+                                        gridDelegate:
+                                            const SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: 2,
+                                          childAspectRatio: 3 / 3,
+                                          crossAxisSpacing: 5,
+                                          mainAxisSpacing: 5,
+                                        ),
+                                        itemCount: homePageControler.userListModel!.userList!.length,
+                                        itemBuilder: (context, index) {
+                                          UserList data = homePageControler.userListModel!.userList![index];
+                                          return gridContainer(data);
+                                        },
+                                      ),
+                                    )
+                                  : Expanded(
+                                      child: ListView.builder(
+                                        itemCount: homePageControler.userListModel!.userList!.length,
+                                        physics:
+                                            const AlwaysScrollableScrollPhysics(),
+                                        shrinkWrap: true,
+                                        itemBuilder: (context, index) {
+                                          UserList data = homePageControler.userListModel!.userList![index];
+                                          return listContainer(data);
+                                        },
+                                      ),
+                                    ))
+                            ],
+                          );
+                  }),
+                ),
+            );
       }),
     );
   }
@@ -227,7 +221,7 @@ class _HomePageState extends State<HomePage> {
     return Container(
       decoration: BoxDecoration(
           border: Border.all(color: AppColors.greyColor),
-          borderRadius: BorderRadius.all(Radius.circular(10))),
+          borderRadius: const BorderRadius.all(Radius.circular(10))),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
@@ -235,15 +229,15 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(data.firstName.toString()),
-            SizedBox(height: 5),
+            const SizedBox(height: 5),
             Text(data.lastName.toString()),
-            SizedBox(height: 5),
+            const SizedBox(height: 5),
             Text(
               overflow: TextOverflow.ellipsis,
               data.email.toString()),
-            SizedBox(height: 5),
+            const SizedBox(height: 5),
             Text(data.phoneNo.toString()),
-            SizedBox(height: 5),
+            const SizedBox(height: 5),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -259,7 +253,7 @@ class _HomePageState extends State<HomePage> {
                       elevation: 0,
                       // primary: Colors.transparent,
                       shadowColor: Colors.transparent.withOpacity(0.1),
-                      side: BorderSide(
+                      side: const BorderSide(
                         // width: 2,
                         color: AppColors.darkblue,
                       ),
@@ -281,8 +275,8 @@ class _HomePageState extends State<HomePage> {
     return Container(
       decoration: BoxDecoration(
           border: Border.all(color: AppColors.greyColor),
-          borderRadius: BorderRadius.all(Radius.circular(10))),
-      margin: EdgeInsets.only(top: 10, bottom: 10),
+          borderRadius: const BorderRadius.all(Radius.circular(10))),
+      margin: const EdgeInsets.only(top: 10, bottom: 10),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Row(
@@ -311,12 +305,12 @@ class _HomePageState extends State<HomePage> {
                 style: AppStyling.darkblueF12W400,
               ),
               style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.all(8),
+                padding: const EdgeInsets.all(8),
                 backgroundColor: Colors.transparent,
                 elevation: 0,
                 // primary: Colors.transparent,
                 shadowColor: Colors.transparent.withOpacity(0.1),
-                side: BorderSide(
+                side: const BorderSide(
                   // width: 2,
                   color: AppColors.darkblue,
                 ),

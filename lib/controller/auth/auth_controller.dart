@@ -27,6 +27,9 @@ class AuthController extends GetxController {
       _loginModel = LoginModel.fromJson(response);
       if (loginModel!.status == true) {
         LocalDB.saveString("token", _loginModel!.record!.authtoken!);
+        LocalDB.saveString("fname", _loginModel!.record!.firstName!);
+        LocalDB.saveString("lname", _loginModel!.record!.lastName!);
+        LocalDB.saveString("email", _loginModel!.record!.email!);
         isLoading.value = false;
         UiUtils().showToast(context, _loginModel!.message!, Colors.green);
         Get.toNamed(Routes.homePage);
@@ -68,9 +71,10 @@ class AuthController extends GetxController {
       _registerModel = RegisterModel.fromJson(response);
       if (_registerModel!.status == true) {
         LocalDB.saveString("token", _registerModel!.data!.token!);
+        
         isLoading.value = false;
-         UiUtils().showToast(context, _registerModel!.message!, Colors.green);
-        Get.toNamed(Routes.homePage);
+         UiUtils().showToast(context, "Sucessfully Register, Please Login", Colors.green);
+        Get.toNamed(Routes.mainAuth);
 
         return _registerModel;
       } else {

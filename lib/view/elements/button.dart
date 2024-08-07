@@ -47,7 +47,7 @@ class CustomLongButton extends StatelessWidget {
                 // width: 70,
                 child: Center(child: CircularProgressIndicator()))
             : FittedBox(
-                child: Text(name, style: AppStyling.textTabGreyF10W500),
+                child: Text(name, style: AppStyling.whiteF16W500),
               ),
       ),
     );

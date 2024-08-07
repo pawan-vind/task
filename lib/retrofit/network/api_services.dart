@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:task/retrofit/local/local_services.dart';
 import 'api_endpoints.dart';
 import '../../retrofit/network/dio_client.dart';
@@ -42,7 +43,7 @@ class ApiServices {
     return null;
   }
 
-  userList() async {
+  userList({int? page}) async {
     try {
       var response = await dio.get(
         AppApiEndpoints.userList,
